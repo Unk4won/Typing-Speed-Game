@@ -6,10 +6,10 @@ import { useTimer } from '../hooks/useTimer';
 
 interface GameProps {
   onGameFinish: (wpm: number, accuracy: number, score: number) => void;
-  numWords: number; // Nueva prop: cantidad de palabras a generar
+  numWords: number;
 }
 
-const Game: React.FC<GameProps> = ({ onGameFinish, numWords }) => { // Recibir numWords
+const Game: React.FC<GameProps> = ({ onGameFinish, numWords }) => {
   const [targetWords, setTargetWords] = useState<string[]>([]);
   const [currentWordIndex, setCurrentWordIndex] = useState<number>(0);
   const [typedWord, setTypedWord] = useState<string>('');
@@ -25,7 +25,7 @@ const Game: React.FC<GameProps> = ({ onGameFinish, numWords }) => { // Recibir n
   const inputRef = useRef<HTMLInputElement>(null);
 
   const { time: timer, startTimer, stopTimer, resetTimer } = useTimer({
-    initialTime: 60, // Puedes mantener esto fijo o hacerlo configurable también
+    initialTime: 60,
     onTimerEnd: () => {
       if (isGameStarted && endTime === null) {
         stopGame();
@@ -34,12 +34,16 @@ const Game: React.FC<GameProps> = ({ onGameFinish, numWords }) => { // Recibir n
     startOnMount: false,
   });
 
-  // Generar palabras para el juego basado en numWords
   useEffect(() => {
     const generatedWords: string[] = [];
-    for (let i = 0; i < numWords; i++) { // Usar numWords aquí
+    for (let i = 0; i < numWords; i++) {
       const randomIndex = Math.floor(Math.random() * words.length);
-      generatedWords.push(words[randomIndex]);
+      let word = words[randomIndex];
+
+      // MODIFICADO: Añadir coma después de CADA palabra
+      word += ','; // Añade una coma al final de CADA palabra
+
+      generatedWords.push(word);
     }
     setTargetWords(generatedWords);
     setCurrentWordIndex(0);
@@ -56,7 +60,7 @@ const Game: React.FC<GameProps> = ({ onGameFinish, numWords }) => { // Recibir n
     if (inputRef.current) {
       inputRef.current.focus();
     }
-  }, [numWords]); // Importante: Añadir numWords a las dependencias del useEffect
+  }, [numWords]); // Dependencia clave: regenerar palabras si numWords cambia
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -82,10 +86,10 @@ const Game: React.FC<GameProps> = ({ onGameFinish, numWords }) => { // Recibir n
           }
         }
         if (wordToCheck.length >= currentTargetWord.length) {
-            setCorrectTypedChars((prev) => prev + 1);
+            setCorrectTypedChars((prev) => prev + 1); // Sumar el espacio si se intentó escribir al menos la misma longitud
         }
       }
-      setTotalTypedChars((prev) => prev + wordToCheck.length + 1);
+      setTotalTypedChars((prev) => prev + value.length); // Use value.length to count typed space
       setTypedWord('');
       setCurrentWordIndex((prev) => prev + 1);
 
@@ -105,7 +109,10 @@ const Game: React.FC<GameProps> = ({ onGameFinish, numWords }) => { // Recibir n
     setIsGameStarted(false);
 
     const durationInSeconds = startTime ? ((endTime || Date.now()) - startTime) / 1000 : 0;
-    const finalTargetTextLength = targetWords.join(' ').length + targetWords.length -1; // Sumar espacios entre palabras
+    const finalTargetText = targetWords.join(' ');
+    // Adjust target length for accuracy calculation if it includes punctuation
+    const finalTargetTextLength = finalTargetText.length;
+
 
     const { wpm, accuracy } = calculateWPMAndAccuracy(
       finalTargetTextLength,
@@ -115,10 +122,9 @@ const Game: React.FC<GameProps> = ({ onGameFinish, numWords }) => { // Recibir n
     );
 
     let score = 0;
-    score += correctWordsCount * 10;
-    // Aquí puedes refinar la dificultad del score, por ejemplo, más puntos por palabras más largas en nivel "hard"
-    // o un multiplicador de score basado en `numWords` (dificultad)
-    score += Math.floor(correctWordsCount * (numWords / 30)); // Multiplicador de score por dificultad
+    score += correctWordsCount * 10; // Puntuación base por palabra correcta
+    // Multiplicador de score basado en la dificultad (numWords)
+    score += Math.floor(correctWordsCount * (numWords / 30));
 
     onGameFinish(wpm, accuracy, score);
   };
@@ -158,16 +164,12 @@ const Game: React.FC<GameProps> = ({ onGameFinish, numWords }) => { // Recibir n
   }, [targetWords, currentWordIndex, typedWord]);
 
   const currentDuration = startTime && !endTime ? (Date.now() - startTime) / 1000 : 0;
-  // Este cálculo de `currentTargetTextLength` y los `dynamicCorrectChars`/`dynamicTotalTypedChars`
-  // es un poco más complejo cuando se usa la vista de palabras.
-  // Para la visualización en vivo, simplemente podemos usar las cuentas totales hasta el momento.
   const { wpm: currentWPM, accuracy: currentAccuracy } = calculateWPMAndAccuracy(
-    targetWords.join(' ').length + (targetWords.length > 0 ? targetWords.length - 1 : 0), // Longitud objetivo total
-    correctTypedChars, // Caracteres correctos acumulados
-    totalTypedChars,   // Caracteres tipeados acumulados
+    targetWords.join(' ').length, // Total length of all target words, including spaces
+    correctTypedChars,
+    totalTypedChars,
     currentDuration
   );
-
 
   return (
     <div className="flex flex-col items-center justify-center w-full h-full p-4 text-center ">
@@ -200,10 +202,8 @@ const Game: React.FC<GameProps> = ({ onGameFinish, numWords }) => { // Recibir n
         </div>
       </div>
 
-      {/* Contenedor de palabras: quitar scroll vertical forzado, dejar que el texto fluya */}
-      {/* Ajustar min-h y max-h para controlar cuántas líneas se ven sin scroll */}
-      <div className="bg-transparent border border-black/35 p-6 rounded-lg shadow-md w-full max-w-xl mb-8 min-h-[150px] max-h-[250px] text-left overflow-hidden flex flex-wrap content-start">
-        <p className="text-xl leading-relaxed text-zinc-700">
+      <div className="bg-transparent border border-black/35 p-6 rounded-lg shadow-md w-full max-w-xl mb-8 min-h-[150px] text-left">
+        <p className="flex flex-wrap text-xl leading-relaxed text-zinc-700">
           {renderCurrentWords}
         </p>
       </div>

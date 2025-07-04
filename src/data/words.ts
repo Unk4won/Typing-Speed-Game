@@ -1,3 +1,4 @@
+// src/data/words.ts
 export const words = [
   "apple", "air", "animal", "answer", "art", "ask", "always", "away", "arm", "age",
   "book", "ball", "blue", "bring", "build", "back", "best", "baby", "break", "bird",
@@ -26,5 +27,3 @@ export const words = [
   "yellow", "yes", "young", "yogurt", "yard", "yesterday", "your", "yawn", "yarn", "youth",
   "zebra", "zero", "zoo", "zip", "zone", "zinc", "zest", "zoom", "zodiac", "zombie"
 ];
-
-export default words;
