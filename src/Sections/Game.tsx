@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { words } from '../data/words';
 import { calculateWPMAndAccuracy } from '../utils/calculateWPM';
-import { useTimer } from '../hooks/useTimer';
+import { useTimer } from '../hooks/useTimer'; // NOTA: Asegúrate que el nombre del archivo sea exactamente 'useTimer.ts'
 
 interface GameProps {
   onGameFinish: (wpm: number, accuracy: number, score: number) => void;
@@ -14,7 +14,7 @@ const Game: React.FC<GameProps> = ({ onGameFinish, numWords }) => {
   const [currentWordIndex, setCurrentWordIndex] = useState<number>(0);
   const [typedWord, setTypedWord] = useState<string>('');
   const [correctWordsCount, setCorrectWordsCount] = useState<number>(0);
-  const [incorrectWordsCount, setIncorrectWordsCount] = useState<number>(0);
+  // REMOVIDO: const [incorrectWordsCount, setIncorrectWordsCount] = useState<number>(0);
   const [totalTypedChars, setTotalTypedChars] = useState<number>(0);
   const [correctTypedChars, setCorrectTypedChars] = useState<number>(0);
 
@@ -39,17 +39,14 @@ const Game: React.FC<GameProps> = ({ onGameFinish, numWords }) => {
     for (let i = 0; i < numWords; i++) {
       const randomIndex = Math.floor(Math.random() * words.length);
       let word = words[randomIndex];
-
-      // MODIFICADO: Añadir coma después de CADA palabra
       word += ','; // Añade una coma al final de CADA palabra
-
       generatedWords.push(word);
     }
     setTargetWords(generatedWords);
     setCurrentWordIndex(0);
     setTypedWord('');
     setCorrectWordsCount(0);
-    setIncorrectWordsCount(0);
+    // REMOVIDO: setIncorrectWordsCount(0);
     setTotalTypedChars(0);
     setCorrectTypedChars(0);
     setStartTime(null);
@@ -60,7 +57,7 @@ const Game: React.FC<GameProps> = ({ onGameFinish, numWords }) => {
     if (inputRef.current) {
       inputRef.current.focus();
     }
-  }, [numWords]); // Dependencia clave: regenerar palabras si numWords cambia
+  }, [numWords]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -79,7 +76,7 @@ const Game: React.FC<GameProps> = ({ onGameFinish, numWords }) => {
         setCorrectWordsCount((prev) => prev + 1);
         setCorrectTypedChars((prev) => prev + currentTargetWord.length + 1); // +1 por el espacio
       } else {
-        setIncorrectWordsCount((prev) => prev + 1);
+        // REMOVIDO: setIncorrectWordsCount((prev) => prev + 1);
         for (let i = 0; i < wordToCheck.length && i < currentTargetWord.length; i++) {
           if (wordToCheck[i] === currentTargetWord[i]) {
             setCorrectTypedChars((prev) => prev + 1);
@@ -89,7 +86,7 @@ const Game: React.FC<GameProps> = ({ onGameFinish, numWords }) => {
             setCorrectTypedChars((prev) => prev + 1); // Sumar el espacio si se intentó escribir al menos la misma longitud
         }
       }
-      setTotalTypedChars((prev) => prev + value.length); // Use value.length to count typed space
+      setTotalTypedChars((prev) => prev + value.length);
       setTypedWord('');
       setCurrentWordIndex((prev) => prev + 1);
 
@@ -110,20 +107,18 @@ const Game: React.FC<GameProps> = ({ onGameFinish, numWords }) => {
 
     const durationInSeconds = startTime ? ((endTime || Date.now()) - startTime) / 1000 : 0;
     const finalTargetText = targetWords.join(' ');
-    // Adjust target length for accuracy calculation if it includes punctuation
     const finalTargetTextLength = finalTargetText.length;
 
 
     const { wpm, accuracy } = calculateWPMAndAccuracy(
-      finalTargetTextLength,
+      finalTargetTextLength, // Este parámetro ya no será utilizado por calculateWPMAndAccuracy
       correctTypedChars,
       totalTypedChars,
       durationInSeconds
     );
 
     let score = 0;
-    score += correctWordsCount * 10; // Puntuación base por palabra correcta
-    // Multiplicador de score basado en la dificultad (numWords)
+    score += correctWordsCount * 10;
     score += Math.floor(correctWordsCount * (numWords / 30));
 
     onGameFinish(wpm, accuracy, score);
@@ -165,7 +160,7 @@ const Game: React.FC<GameProps> = ({ onGameFinish, numWords }) => {
 
   const currentDuration = startTime && !endTime ? (Date.now() - startTime) / 1000 : 0;
   const { wpm: currentWPM, accuracy: currentAccuracy } = calculateWPMAndAccuracy(
-    targetWords.join(' ').length, // Total length of all target words, including spaces
+    targetWords.join(' ').length,
     correctTypedChars,
     totalTypedChars,
     currentDuration

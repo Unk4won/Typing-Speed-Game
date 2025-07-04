@@ -1,19 +1,31 @@
 // src/utils/calculateWPM.ts
+
+interface WPMResult {
+    wpm: number;
+    accuracy: number;
+}
+
 export const calculateWPMAndAccuracy = (
-  totalTargetChars: number, // Longitud total de todos los caracteres del texto objetivo
-  totalCorrectlyTypedChars: number, // Total de caracteres correctos que el usuario tipeó
-  totalUserTypedChars: number, // Total de caracteres que el usuario tecleó (incluyendo errores)
-  durationInSeconds: number
-) => {
-  // WPM (Palabras Por Minuto)
-  // Se considera que una palabra tiene en promedio 5 caracteres.
-  // Se basa en los caracteres correctos para el WPM "bruto".
-  const wordsTyped = totalCorrectlyTypedChars / 5;
-  const durationInMinutes = durationInSeconds / 60;
-  const wpm = durationInMinutes > 0 ? wordsTyped / durationInMinutes : 0;
+    // REMOVIDO: totalTargetChars: number,
+    correctTypedChars: number,
+    totalTypedChars: number,
+    durationInSeconds: number
+): WPMResult => {
+    const durationInMinutes = durationInSeconds / 60;
 
-  // Precisión
-  const accuracy = totalUserTypedChars > 0 ? (totalCorrectlyTypedChars / totalUserTypedChars) * 100 : 0;
+    // Calcular WPM (Palabras por minuto)
+    // Una palabra se considera 5 caracteres (incluyendo espacios, pero aquí ya manejamos espacios por separado)
+    // Usamos correctTypedChars ya que es lo que realmente contribuye a WPM.
+    let wpm = 0;
+    if (durationInMinutes > 0) {
+        wpm = (correctTypedChars / 5) / durationInMinutes;
+    }
 
-  return { wpm, accuracy };
+    // Calcular Precisión
+    let accuracy = 0;
+    if (totalTypedChars > 0) {
+        accuracy = (correctTypedChars / totalTypedChars) * 100;
+    }
+
+    return { wpm, accuracy };
 };
