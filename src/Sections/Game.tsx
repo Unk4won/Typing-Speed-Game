@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { words } from '../data/words';
 import { calculateWPMAndAccuracy } from '../utils/calculateWPM';
-import { useTimer } from '../hooks/useTimer'; // NOTA: Asegúrate que el nombre del archivo sea exactamente 'useTimer.ts'
+import { useTimer } from '../hooks/useTimer';
 
 interface GameProps {
   onGameFinish: (wpm: number, accuracy: number, score: number) => void;
@@ -14,7 +14,7 @@ const Game: React.FC<GameProps> = ({ onGameFinish, numWords }) => {
   const [currentWordIndex, setCurrentWordIndex] = useState<number>(0);
   const [typedWord, setTypedWord] = useState<string>('');
   const [correctWordsCount, setCorrectWordsCount] = useState<number>(0);
-  // REMOVIDO: const [incorrectWordsCount, setIncorrectWordsCount] = useState<number>(0);
+  const [incorrectWordsCount, setIncorrectWordsCount] = useState<number>(0);
   const [totalTypedChars, setTotalTypedChars] = useState<number>(0);
   const [correctTypedChars, setCorrectTypedChars] = useState<number>(0);
 
@@ -46,7 +46,7 @@ const Game: React.FC<GameProps> = ({ onGameFinish, numWords }) => {
     setCurrentWordIndex(0);
     setTypedWord('');
     setCorrectWordsCount(0);
-    // REMOVIDO: setIncorrectWordsCount(0);
+    setIncorrectWordsCount(0);
     setTotalTypedChars(0);
     setCorrectTypedChars(0);
     setStartTime(null);
@@ -69,24 +69,37 @@ const Game: React.FC<GameProps> = ({ onGameFinish, numWords }) => {
     }
 
     if (value.endsWith(' ') || value.endsWith('\n')) {
-      const wordToCheck = value.trim();
+      const typedWordClean = value.trim(); // Lo que el usuario tecleó, sin espacios al final
       const currentTargetWord = targetWords[currentWordIndex];
+      
+      // Elimina la coma del final de la palabra objetivo para la comparación
+      const currentTargetWordWithoutComma = currentTargetWord.endsWith(',') 
+                                        ? currentTargetWord.slice(0, -1) 
+                                        : currentTargetWord;
 
-      if (wordToCheck === currentTargetWord) {
+      // COMPARA AHORA LA PALABRA ESCRITA CON LA PALABRA OBJETIVO SIN LA COMA
+      if (typedWordClean === currentTargetWordWithoutComma) {
         setCorrectWordsCount((prev) => prev + 1);
-        setCorrectTypedChars((prev) => prev + currentTargetWord.length + 1); // +1 por el espacio
+        // Si es correcta, se asume que también tecleó la coma y el espacio
+        setCorrectTypedChars((prev) => prev + currentTargetWord.length + 1); 
       } else {
-        // REMOVIDO: setIncorrectWordsCount((prev) => prev + 1);
-        for (let i = 0; i < wordToCheck.length && i < currentTargetWord.length; i++) {
-          if (wordToCheck[i] === currentTargetWord[i]) {
-            setCorrectTypedChars((prev) => prev + 1);
-          }
+        setIncorrectWordsCount((prev) => prev + 1);
+        
+        // Calcula caracteres correctos parciales, comparando sin la coma en el target
+        const actualComparisonLength = Math.min(typedWordClean.length, currentTargetWordWithoutComma.length);
+        for (let i = 0; i < actualComparisonLength; i++) {
+            if (typedWordClean[i] === currentTargetWordWithoutComma[i]) {
+                setCorrectTypedChars((prev) => prev + 1);
+            }
         }
-        if (wordToCheck.length >= currentTargetWord.length) {
+        // Si el usuario escribió al menos la longitud de la palabra (sin la coma), considera el espacio como correcto.
+        // Si el usuario escribió también la coma (que no se compara), eso también se cuenta como "totalTypedChars" pero no "correctTypedChars" en la palabra.
+        // Solo el espacio cuenta como char correcto si la palabra base es al menos igual en longitud.
+        if (typedWordClean.length >= currentTargetWordWithoutComma.length) {
             setCorrectTypedChars((prev) => prev + 1); // Sumar el espacio si se intentó escribir al menos la misma longitud
         }
       }
-      setTotalTypedChars((prev) => prev + value.length);
+      setTotalTypedChars((prev) => prev + value.length); // Suma la longitud total de lo tecleado (incluyendo el espacio)
       setTypedWord('');
       setCurrentWordIndex((prev) => prev + 1);
 
@@ -106,12 +119,8 @@ const Game: React.FC<GameProps> = ({ onGameFinish, numWords }) => {
     setIsGameStarted(false);
 
     const durationInSeconds = startTime ? ((endTime || Date.now()) - startTime) / 1000 : 0;
-    const finalTargetText = targetWords.join(' ');
-    const finalTargetTextLength = finalTargetText.length;
-
 
     const { wpm, accuracy } = calculateWPMAndAccuracy(
-      finalTargetTextLength, // Este parámetro ya no será utilizado por calculateWPMAndAccuracy
       correctTypedChars,
       totalTypedChars,
       durationInSeconds
@@ -133,10 +142,12 @@ const Game: React.FC<GameProps> = ({ onGameFinish, numWords }) => {
       if (hasBeenTyped) {
         wordClass = 'text-gray-400';
       } else if (isCurrentWord) {
+        // Renderiza la palabra actual, incluyendo la coma
         return (
           <span key={wordIndex} className="mr-2">
             {word.split('').map((char, charIndex) => {
               let charClass = 'text-zinc-700';
+              // Compara el caracter tecleado con el caracter objetivo (incluyendo la coma)
               if (charIndex < typedWord.length) {
                 charClass = (char === typedWord[charIndex]) ? 'text-green-500' : 'text-red-500';
               }
@@ -160,7 +171,6 @@ const Game: React.FC<GameProps> = ({ onGameFinish, numWords }) => {
 
   const currentDuration = startTime && !endTime ? (Date.now() - startTime) / 1000 : 0;
   const { wpm: currentWPM, accuracy: currentAccuracy } = calculateWPMAndAccuracy(
-    targetWords.join(' ').length,
     correctTypedChars,
     totalTypedChars,
     currentDuration

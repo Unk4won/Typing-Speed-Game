@@ -1,53 +1,39 @@
 // src/sections/Finish.tsx
 import React from 'react';
+import type { FinishProps } from '../types'; // Importa FinishProps como un tipo
 
-interface FinishProps {
-  onRetry: () => void;
-  onGoHome: () => void;
-  // Modificar la interfaz para incluir score
-  results: { wpm: number; accuracy: number; score: number } | null;
-}
-
-const Finish: React.FC<FinishProps> = ({ onRetry, onGoHome, results }) => {
+const Finish: React.FC<FinishProps> = ({ wpm, accuracy, score, onRestartGame, onGoHome }) => {
   return (
-    <div className="flex flex-col items-center justify-center w-full h-full text-center">
-      <h2 className="mb-6 text-4xl font-extrabold text-emerald-500">Game Over!</h2>
+    <div className="flex flex-col items-center justify-center p-4 text-center">
+      <h2 className="mb-6 text-4xl font-bold text-emerald-500">¡Juego Terminado!</h2>
 
-      {results && (
-        <div className="grid grid-cols-1 gap-4 mb-8 text-xl sm:grid-cols-2 lg:grid-cols-3">
-          <div className="p-4 bg-white border rounded-lg shadow-md border-emerald-300">
-            <h3 className="text-xl font-semibold text-emerald-700">WPM</h3>
-            <p className="mt-2 text-3xl font-bold text-zinc-800">{results.wpm.toFixed(0)}</p>
-          </div>
-          <div className="p-4 bg-white border rounded-lg shadow-md border-emerald-300">
-            <h3 className="text-xl font-semibold text-emerald-700">Accuracy</h3>
-            <p className="mt-2 text-3xl font-bold text-zinc-800">{results.accuracy.toFixed(1)}%</p>
-          </div>
-          {/* Nuevo: Mostrar Score */}
-          <div className="p-4 bg-white border rounded-lg shadow-md border-emerald-300">
-            <h3 className="text-xl font-semibold text-emerald-700">Score</h3>
-            <p className="mt-2 text-3xl font-bold text-zinc-800">{results.score.toFixed(0)}</p>
-          </div>
+      <div className="grid w-full max-w-xl grid-cols-1 gap-4 mb-8 md:grid-cols-3">
+        <div className="flex flex-col items-center p-4 bg-white rounded-lg shadow-md">
+          <h3 className="text-xl font-semibold text-zinc-700">WPM</h3>
+          <p className="text-3xl font-bold text-emerald-600">{wpm.toFixed(0)}</p>
         </div>
-      )}
+        <div className="flex flex-col items-center p-4 bg-white rounded-lg shadow-md">
+          <h3 className="text-xl font-semibold text-zinc-700">Precisión</h3>
+          <p className="text-3xl font-bold text-emerald-600">{accuracy.toFixed(1)}%</p>
+        </div>
+        <div className="flex flex-col items-center p-4 bg-white rounded-lg shadow-md">
+          <h3 className="text-xl font-semibold text-zinc-700">Puntuación</h3>
+          <p className="text-3xl font-bold text-emerald-600">{score.toFixed(0)}</p>
+        </div>
+      </div>
 
-      {!results && (
-        <p className="mb-8 text-xl text-zinc-800">Cargando resultados...</p>
-      )}
-
-
-      <div className="flex gap-4 mt-8">
+      <div className="flex flex-col gap-4">
         <button
-          onClick={onRetry}
-          className="px-6 py-2 font-bold text-white transition duration-300 rounded bg-emerald-500 hover:bg-emerald-600"
+          onClick={onRestartGame}
+          className="w-64 px-6 py-3 text-lg font-medium text-white transition-colors duration-300 bg-blue-500 rounded-lg shadow-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-75"
         >
-          Retry
+          Reintentar
         </button>
         <button
           onClick={onGoHome}
-          className="px-6 py-2 font-bold text-white transition duration-300 bg-gray-700 rounded hover:bg-gray-600"
+          className="w-64 px-6 py-3 text-lg font-medium text-white transition-colors duration-300 bg-gray-500 rounded-lg shadow-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-opacity-75"
         >
-          Home
+          Volver al Inicio
         </button>
       </div>
     </div>

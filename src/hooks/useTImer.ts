@@ -10,7 +10,7 @@ interface UseTimerProps {
 export const useTimer = ({ initialTime, onTimerEnd, startOnMount = false }: UseTimerProps) => {
   const [time, setTime] = useState<number>(initialTime);
   const [isRunning, setIsRunning] = useState<boolean>(startOnMount);
-  const timerRef = useRef<number | null>(null); // MODIFICADO: Cambiado NodeJS.Timeout a number
+  const timerRef = useRef<number | null>(null); // Tipo de referencia corregido a number
 
   const startTimer = useCallback(() => {
     setIsRunning(true);

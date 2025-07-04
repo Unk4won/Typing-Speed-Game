@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import Game from './sections/Game';
 import Finish from './sections/Finish';
 import Home from './sections/Home';
-import type { AppState } from './types'; // MODIFICADO: Añadido 'type' para la importación
+import type { AppState } from './types'; // Importa AppState como un tipo
 
 const App: React.FC = () => {
   const [appState, setAppState] = useState<AppState>('home');
