@@ -1,0 +1,30 @@
+export const words = [
+  "apple", "air", "animal", "answer", "art", "ask", "always", "away", "arm", "age",
+  "book", "ball", "blue", "bring", "build", "back", "best", "baby", "break", "bird",
+  "cat", "car", "cake", "cold", "cloud", "clean", "call", "close", "create", "city",
+  "dog", "day", "door", "dance", "dream", "dark", "deep", "drive", "dry", "done",
+  "elephant", "easy", "eat", "eye", "earth", "each", "enter", "end", "energy", "early",
+  "fish", "find", "fast", "food", "fun", "fly", "face", "fall", "family", "feel",
+  "girl", "go", "green", "good", "give", "game", "glass", "grow", "great", "ground",
+  "house", "happy", "hand", "hot", "hope", "hard", "hear", "head", "help", "hill",
+  "ice", "idea", "inside", "island", "iron", "inch", "invite", "interest", "important", "include",
+  "jump", "join", "jungle", "juice", "joke", "job", "jacket", "jam", "jeans", "journey",
+  "king", "kind", "kite", "kick", "keep", "key", "know", "kitchen", "knock", "knee",
+  "love", "light", "long", "land", "low", "line", "look", "laugh", "learn", "leave",
+  "man", "make", "moon", "move", "milk", "mouse", "money", "many", "mountain", "mind",
+  "night", "name", "nice", "need", "nose", "new", "next", "noise", "nothing", "note",
+  "open", "old", "ocean", "off", "on", "over", "only", "orange", "outside", "order",
+  "people", "play", "plant", "put", "place", "picture", "part", "paint", "party", "peace",
+  "queen", "quick", "quiet", "question", "quiz", "quit", "quality", "quote", "quilt", "quarter",
+  "run", "read", "red", "ride", "rain", "room", "road", "rest", "reach", "river",
+  "sun", "sea", "snow", "sky", "soft", "sweet", "small", "song", "start", "smile",
+  "tree", "time", "train", "try", "turn", "take", "tall", "talk", "team", "top",
+  "under", "up", "use", "unit", "usual", "unite", "until", "unlock", "understand", "universe",
+  "very", "voice", "view", "visit", "village", "value", "video", "vote", "van", "victory",
+  "water", "walk", "wait", "wind", "white", "write", "world", "wish", "word", "work",
+  "x-ray", "xylophone", "xerox", "xenon", "xylem", "xenial", "xenolith", "xenogenesis", "x-factor", "xmas",
+  "yellow", "yes", "young", "yogurt", "yard", "yesterday", "your", "yawn", "yarn", "youth",
+  "zebra", "zero", "zoo", "zip", "zone", "zinc", "zest", "zoom", "zodiac", "zombie"
+];
+
+export default words;

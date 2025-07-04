@@ -1,0 +1,1 @@
+export type AppState = 'home' | 'game' | 'results';
