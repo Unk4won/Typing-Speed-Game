@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { words } from '../data/words';
 import { calculateWPMAndAccuracy } from '../utils/calculateWPM';
-import { useTimer } from '../hooks/useTimer';
+import { usetimer } from '../hooks/usetimer';
 
 interface GameProps {
   onGameFinish: (wpm: number, accuracy: number, score: number) => void;
@@ -14,7 +14,7 @@ const Game: React.FC<GameProps> = ({ onGameFinish, numWords }) => {
   const [currentWordIndex, setCurrentWordIndex] = useState<number>(0);
   const [typedWord, setTypedWord] = useState<string>('');
   const [correctWordsCount, setCorrectWordsCount] = useState<number>(0);
-  const [incorrectWordsCount, setIncorrectWordsCount] = useState<number>(0);
+ const [_incorrectWordsCount, setIncorrectWordsCount] = useState<number>(0); // Se ha añadido un '_'
   const [totalTypedChars, setTotalTypedChars] = useState<number>(0);
   const [correctTypedChars, setCorrectTypedChars] = useState<number>(0);
 
@@ -24,7 +24,7 @@ const Game: React.FC<GameProps> = ({ onGameFinish, numWords }) => {
 
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const { time: timer, startTimer, stopTimer, resetTimer } = useTimer({
+  const { time: timer, startTimer, stopTimer, resetTimer } = usetimer({
     initialTime: 60,
     onTimerEnd: () => {
       if (isGameStarted && endTime === null) {

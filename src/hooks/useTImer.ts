@@ -7,7 +7,7 @@ interface UseTimerProps {
   startOnMount?: boolean;
 }
 
-export const useTimer = ({ initialTime, onTimerEnd, startOnMount = false }: UseTimerProps) => {
+export const usetimer = ({ initialTime, onTimerEnd, startOnMount = false }: UseTimerProps) => {
   const [time, setTime] = useState<number>(initialTime);
   const [isRunning, setIsRunning] = useState<boolean>(startOnMount);
   const timerRef = useRef<number | null>(null); // Tipo de referencia corregido a number
