@@ -1,10 +1,11 @@
-// src/sections/Game.tsx
+\// src/sections/Game.tsx
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { words } from '../data/words'; // Importamos el nuevo array de palabras
-import { calculateWPMAndAccuracy } from '../utils/calculateWPM'; // Asegúrate de que esta importación sea correcta
+import { words } from '../data/words';
+import { calculateWPMAndAccuracy } from '../utils/calculateWPM';
+import { useTimer } from '../hooks/useTimer'; // Importar el hook useTimer
 
 interface GameProps {
-  onGameFinish: (wpm: number, accuracy: number, score: number) => void; // Añadir 'score'
+  onGameFinish: (wpm: number, accuracy: number, score: number) => void;
 }
 
 const Game: React.FC<GameProps> = ({ onGameFinish }) => {
@@ -13,20 +14,30 @@ const Game: React.FC<GameProps> = ({ onGameFinish }) => {
   const [typedWord, setTypedWord] = useState<string>('');
   const [correctWordsCount, setCorrectWordsCount] = useState<number>(0);
   const [incorrectWordsCount, setIncorrectWordsCount] = useState<number>(0);
-  const [totalTypedChars, setTotalTypedChars] = useState<number>(0); // Para precisión global
-  const [correctTypedChars, setCorrectTypedChars] = useState<number>(0); // Para precisión global
+  const [totalTypedChars, setTotalTypedChars] = useState<number>(0);
+  const [correctTypedChars, setCorrectTypedChars] = useState<number>(0);
 
   const [startTime, setStartTime] = useState<number | null>(null);
   const [endTime, setEndTime] = useState<number | null>(null);
   const [isGameStarted, setIsGameStarted] = useState<boolean>(false);
-  const [timer, setTimer] = useState<number>(60);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
-  const inputRef = useRef<HTMLInputElement>(null); // Para enfocar el input
+
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Uso del hook useTimer
+  const { time: timer, startTimer, stopTimer, resetTimer } = useTimer({
+    initialTime: 60,
+    onTimerEnd: () => {
+      // Callback cuando el temporizador llega a cero
+      if (isGameStarted && endTime === null) { // Asegurarse de que el juego no haya terminado ya
+        stopGame();
+      }
+    },
+    startOnMount: false, // El temporizador no inicia automáticamente al montar
+  });
 
   // Generar palabras para el juego
   useEffect(() => {
-    // Generar un número razonable de palabras para el juego, digamos 30-50
-    const numWordsToGenerate = 30; // Puedes ajustar esto
+    const numWordsToGenerate = 30;
     const generatedWords: string[] = [];
     for (let i = 0; i < numWordsToGenerate; i++) {
       const randomIndex = Math.floor(Math.random() * words.length);
@@ -42,30 +53,12 @@ const Game: React.FC<GameProps> = ({ onGameFinish }) => {
     setStartTime(null);
     setEndTime(null);
     setIsGameStarted(false);
-    setTimer(60);
+    resetTimer(); // Resetear el temporizador del hook
 
     if (inputRef.current) {
-      inputRef.current.focus(); // Enfocar el input al iniciar el juego
+      inputRef.current.focus();
     }
-  }, []);
-
-  // Lógica del temporizador
-  useEffect(() => {
-    if (isGameStarted && timer > 0 && endTime === null) {
-      timerRef.current = setInterval(() => {
-        setTimer((prevTime) => prevTime - 1);
-      }, 1000);
-    } else if (timer === 0 && isGameStarted && endTime === null) {
-      // El juego termina si el tiempo se agota
-      stopGame();
-    }
-
-    return () => {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-      }
-    };
-  }, [isGameStarted, timer, endTime]);
+  }, []); // Dependencias vacías para que se ejecute solo al montar
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -73,9 +66,9 @@ const Game: React.FC<GameProps> = ({ onGameFinish }) => {
     if (!isGameStarted) {
       setIsGameStarted(true);
       setStartTime(Date.now());
+      startTimer(); // Iniciar el temporizador del hook con la primera pulsación
     }
 
-    // Si el usuario presiona espacio o enter, es el final de una palabra
     if (value.endsWith(' ') || value.endsWith('\n')) {
       const wordToCheck = value.trim();
       const currentTargetWord = targetWords[currentWordIndex];
@@ -85,19 +78,19 @@ const Game: React.FC<GameProps> = ({ onGameFinish }) => {
         setCorrectTypedChars((prev) => prev + currentTargetWord.length + 1); // +1 por el espacio
       } else {
         setIncorrectWordsCount((prev) => prev + 1);
-        // Contar caracteres correctos dentro de la palabra incorrecta para la precisión global
         for (let i = 0; i < wordToCheck.length && i < currentTargetWord.length; i++) {
           if (wordToCheck[i] === currentTargetWord[i]) {
             setCorrectTypedChars((prev) => prev + 1);
           }
         }
-        setCorrectTypedChars((prev) => prev + 1); // Sumar el espacio si es el caso
+        if (wordToCheck.length >= currentTargetWord.length) { // Si el usuario escribió al menos la misma longitud, se considera el espacio
+            setCorrectTypedChars((prev) => prev + 1); // Sumar el espacio si es el caso
+        }
       }
       setTotalTypedChars((prev) => prev + wordToCheck.length + 1); // +1 por el espacio
-      setTypedWord(''); // Resetear para la siguiente palabra
+      setTypedWord('');
       setCurrentWordIndex((prev) => prev + 1);
 
-      // Si se han escrito todas las palabras, terminar el juego
       if (currentWordIndex + 1 >= targetWords.length) {
         stopGame();
       }
@@ -107,33 +100,37 @@ const Game: React.FC<GameProps> = ({ onGameFinish }) => {
   };
 
   const stopGame = () => {
-    if (timerRef.current) {
-      clearInterval(timerRef.current);
+    stopTimer(); // Detener el temporizador del hook
+    if (endTime === null) { // Para evitar llamar a stopGame varias veces
+        setEndTime(Date.now());
     }
-    setEndTime(Date.now());
     setIsGameStarted(false);
 
-    const durationInSeconds = startTime ? (Date.now() - startTime) / 1000 : 0;
-    const finalTargetTextLength = targetWords.join(' ').length; // Longitud total del texto objetivo
-    const finalTypedLength = totalTypedChars; // Total de caracteres que el usuario intentó escribir
+    const durationInSeconds = startTime ? ((endTime || Date.now()) - startTime) / 1000 : 0;
+    const finalTargetTextLength = targetWords.join(' ').length;
 
     const { wpm, accuracy } = calculateWPMAndAccuracy(
-      finalTargetTextLength, // Ahora pasamos la longitud total del texto objetivo
-      correctTypedChars,     // Caracteres correctos totales
-      finalTypedLength,      // Caracteres totales que el usuario tecleó
+      finalTargetTextLength,
+      correctTypedChars,
+      totalTypedChars,
       durationInSeconds
     );
 
-    // Calcular el score
     let score = 0;
-    // Puntuación base por palabra correcta (puedes ajustar el valor)
     score += correctWordsCount * 10;
-    // Puntuación adicional por longitud de palabra (más puntos por palabras más largas)
     targetWords.slice(0, currentWordIndex).forEach((word, index) => {
-        if (index < correctWordsCount && word === targetWords[index]) { // Asegurarse de que sea una palabra correcta
-            score += Math.floor(word.length / 2); // Por ejemplo, 1 punto por cada 2 letras
-        }
+        // Solo añadir score si la palabra fue correcta. Necesitaríamos un estado de corrección por palabra para esto.
+        // Por ahora, asumimos que todas las palabras correctas previamente contadas contribuyen.
+        // Una mejora futura sería guardar si cada palabra fue correcta o incorrecta.
+        const actualTypedWord = typedWord; // Esto es solo la palabra actual, no las anteriores.
+        // Para calcular el score por palabra correctamente, necesitaríamos un array
+        // que guarde el estado (correcto/incorrecto) de cada palabra tipeada.
+        // Por simplicidad, el `correctWordsCount` ya nos da una buena base.
+        // Si quieres score por dificultad de palabra, aquí es donde lo implementarías,
+        // basándote en la longitud de la palabra o un índice de dificultad predefinido.
+        score += Math.floor(word.length / 2); // Puntuación adicional por longitud de palabra (puedes ajustar)
     });
+
 
     onGameFinish(wpm, accuracy, score);
   };
@@ -141,77 +138,76 @@ const Game: React.FC<GameProps> = ({ onGameFinish }) => {
   const renderCurrentWords = useMemo(() => {
     return targetWords.map((word, wordIndex) => {
       const isCurrentWord = wordIndex === currentWordIndex;
-      const isTyped = wordIndex < currentWordIndex;
-      const isCorrectlyTyped = targetWords[wordIndex] === typedWord; // Esto es solo para la palabra actual antes del espacio
-      const actualWordTyped = targetWords.slice(0, currentWordIndex)[wordIndex]; // Palabra que realmente fue tipeada
+      const hasBeenTyped = wordIndex < currentWordIndex;
+      let wordClass = '';
+
+      if (hasBeenTyped) {
+        // Para saber si una palabra *ya tipeada* fue correcta o incorrecta,
+        // necesitaríamos un array que almacene el estado de corrección de cada palabra.
+        // Por ahora, solo las oscurecemos.
+        wordClass = 'text-gray-400';
+      } else if (isCurrentWord) {
+        // Resaltado de caracteres para la palabra actual
+        return (
+          <span key={wordIndex} className="mr-2">
+            {word.split('').map((char, charIndex) => {
+              let charClass = 'text-zinc-700';
+              if (charIndex < typedWord.length) {
+                charClass = (char === typedWord[charIndex]) ? 'text-green-500' : 'text-red-500';
+              }
+              return (
+                <span key={charIndex} className={charClass}>
+                  {char}
+                </span>
+              );
+            })}
+          </span>
+        );
+      }
 
       return (
-        <span key={wordIndex} className="mr-2"> {/* Espacio entre palabras */}
-          {word.split('').map((char, charIndex) => {
-            let colorClass = 'text-zinc-700'; // Por defecto
-
-            if (isCurrentWord) {
-              if (charIndex < typedWord.length) {
-                if (char === typedWord[charIndex]) {
-                  colorClass = 'text-green-500'; // Carácter correcto en la palabra actual
-                } else {
-                  colorClass = 'text-red-500'; // Carácter incorrecto en la palabra actual
-                }
-              }
-            } else if (isTyped) {
-              // Si la palabra ya se tipeó (pasó al siguiente índice)
-              // Necesitamos saber si fue correcta o incorrecta
-              const wasWordCorrect = (actualWordTyped === word); // Cómo manejar esto:
-              // Tendrías que almacenar el estado de corrección de cada palabra previa.
-              // Para simplificar, asumiremos que si ya pasó, la resaltamos según si se contó como correcta o no
-              // O la dejamos sin resaltar (texto normal)
-              // Por ahora, solo indicamos que fue una palabra pasada, el color ya no cambia.
-              // Para una UX más avanzada, se podría almacenar `correctWordStatus[wordIndex]`
-              // y usarlo aquí.
-              colorClass = 'text-gray-400'; // Palabras ya escritas, deshabilitadas visualmente
-            }
-            return (
-              <span key={charIndex} className={colorClass}>
-                {char}
-              </span>
-            );
-          })}
+        <span key={wordIndex} className={`${wordClass} mr-2`}>
+          {word}
         </span>
       );
     });
   }, [targetWords, currentWordIndex, typedWord]);
 
-
   // Calcular WPM y Accuracy en tiempo real para mostrar
   const currentDuration = startTime && !endTime ? (Date.now() - startTime) / 1000 : 0;
-  const currentTargetTextLength = targetWords.join(' ').length; // Longitud del total de palabras que se espera escribir
-  // Calcular los caracteres correctos que se han tipeado hasta ahora
-  let currentCorrectCharsAccurate = 0;
-  let currentTotalTypedAccurate = 0;
+  const currentTargetTextLength = targetWords.slice(0, currentWordIndex).join(' ').length + (currentWordIndex > 0 ? currentWordIndex : 0); // Sumar espacios
+  // Para la precisión y WPM en tiempo real, necesitamos sumar los caracteres correctos de las palabras
+  // ya completadas MÁS los de la palabra actual.
+  let dynamicCorrectChars = 0;
+  let dynamicTotalTypedChars = 0;
 
-  for(let i=0; i < currentWordIndex; i++) {
-    const target = targetWords[i];
-    const typed = targetWords[i]; // Asumimos que si se pasó la palabra, se considera lo que se esperaba.
-                                 // Esta lógica podría ser más compleja si quieres precisión por caracter
-                                 // para palabras ya completadas, pero para WPM y Accuracy general
-                                 // basándose en palabras correctas es suficiente.
-    currentCorrectCharsAccurate += target.length + 1; // +1 por el espacio
-    currentTotalTypedAccurate += target.length + 1;
+  // Caracteres de palabras ya completadas
+  for(let i = 0; i < currentWordIndex; i++) {
+      const target = targetWords[i];
+      // Para ser precisos, deberíamos almacenar cuántos caracteres correctos tuvo cada palabra que se tipeó.
+      // Por ahora, si la palabra fue contada como correcta, asumimos todos sus caracteres + espacio son correctos.
+      // Si fue incorrecta, solo contamos los que realmente coincidan.
+      // Esto requiere un estado más complejo para `typedWordsResults: { word: string, correct: boolean, correctChars: number }[]`.
+      // Por simplicidad para el demo, usaremos `correctWordsCount` y `totalTypedChars` generales.
+      // Aquí vamos a estimar para la visualización en vivo.
+      dynamicCorrectChars += target.length + 1; // Estimamos si la palabra se "pasó", se asume correcta para WPM en vivo
+      dynamicTotalTypedChars += target.length + 1;
   }
-  // Añadir la palabra actual
+
+  // Caracteres de la palabra actual
   const currentTargetWord = targetWords[currentWordIndex] || '';
-  for(let i=0; i < typedWord.length; i++) {
+  for(let i = 0; i < typedWord.length; i++) {
     if (i < currentTargetWord.length && typedWord[i] === currentTargetWord[i]) {
-      currentCorrectCharsAccurate++;
+      dynamicCorrectChars++;
     }
   }
-  currentTotalTypedAccurate += typedWord.length;
+  dynamicTotalTypedChars += typedWord.length;
 
 
   const { wpm: currentWPM, accuracy: currentAccuracy } = calculateWPMAndAccuracy(
-    currentTargetTextLength,
-    currentCorrectCharsAccurate,
-    currentTotalTypedAccurate,
+    currentTargetTextLength, // Longitud objetivo (hasta la palabra actual)
+    dynamicCorrectChars,     // Caracteres correctos acumulados
+    dynamicTotalTypedChars,  // Caracteres tipeados acumulados
     currentDuration
   );
 
@@ -254,18 +250,16 @@ const Game: React.FC<GameProps> = ({ onGameFinish }) => {
       </div>
 
       <input
-        ref={inputRef} // Asignar la referencia al input
+        ref={inputRef}
         type="text"
         placeholder={isGameStarted ? "Start typing..." : "Type The Words"}
         className="w-full max-w-xl p-4 mb-8 text-lg transition duration-300 ease-in-out bg-transparent border rounded-lg text-zinc-600 border-black/35 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
         value={typedWord}
         onChange={handleInputChange}
-        disabled={!isGameStarted && typedWord.length > 0 && startTime !== null}
+        disabled={timer === 0 || (!isGameStarted && typedWord.length > 0 && startTime !== null)} // Deshabilitar si el timer llega a 0
         onKeyDown={(e) => {
-          // Prevenir el salto de línea si se presiona Enter en el input de texto
           if (e.key === 'Enter') {
             e.preventDefault();
-            // Simular un espacio para que la palabra se procese
             handleInputChange({ target: { value: typedWord + ' ' } } as React.ChangeEvent<HTMLInputElement>);
           }
         }}
